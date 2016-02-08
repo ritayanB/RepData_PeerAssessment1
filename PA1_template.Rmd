@@ -43,18 +43,13 @@ with(avg.steps, plot(y = avgsteps,  x = interval, type = "l"))
 
 print(paste("5-minute interval that, on average across all the days in the dataset, contains the maximum number of steps :", print(names(which.max(avg.steps$avgsteps)))))
 
-
-  
-
-  
 ## Imputing missing values
 #1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs) 
 print(paste("Total number of null values :" , sum(is.na(activity$steps))))
 #2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
-nulls <- activity[!complete.cases(activity),]
-for(i in 1:length(unique(nulls$date))){
-  activity[which(activity$date == unique(nulls$date)[i]),]$steps <- as.numeric(avg.steps$avgsteps)
-}
+
+# We'll use mean values already calculated in previous steps
+
 #3. Create a new dataset that is equal to the original dataset but with the missing data filled in
 #We are creating a new variable "filled.activity" that will have average steps filled in place of NA
 filled.activity <- activity
@@ -63,6 +58,24 @@ for(i in 1:length(unique(nulls$date))){
   filled.activity[which(filled.activity$date == unique(nulls$date)[i]),]$steps <- as.numeric(avg.steps$avgsteps)
 }
 #4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps
+
+filled.activity.patt  <- with(data = filled.activity, tapply(X = steps, INDEX = date, FUN = sum))
+filled.activity.patt  <- data.frame(date = names(filled.activity.patt), tot.steps = filled.activity.patt)
+hist(filled.activity.patt$tot.steps, xlab = "Total Steps", 
+            main = "Histogram of total number \n of steps taken each day(null values amputed)")
+            
+print(paste("Mean (with only clean values):", mean(clean.values$steps)))         
+print(paste("Mean (with filled values):", mean(filled.activity$steps)))
+
+print(paste("Median (with only clean values):", median(clean.values$steps)))         
+print(paste("Median (with filled values):", median(filled.activity$steps)))
+
+print("There is no impact on either mean or median values between original set and the amputed set")
+
+
+print("Comparison in ")
+data.frame(Labels = c("Original","Amputated"), Means = c(mean(activity.patt$tot.steps), mean(filled.activity.patt$tot.steps)),
+                    Medians = c(median(activity.patt$tot.steps), median(filled.activity.patt$tot.steps)))
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
