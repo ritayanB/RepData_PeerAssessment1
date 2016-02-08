@@ -1,21 +1,23 @@
 ---
 title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+author: "Ritayan B"
+date: "8 February 2016"
+output: html_document
+keep_md: true
 ---
 
 
 ## Loading and preprocessing the data
+```{r}
 unzip("activity.zip")
 library(lubridate)
 library(dplyr)
 activity <- read.csv("activity.csv")
 activity$date <- ymd(activity$date)
-
+```
 
 ## What is mean total number of steps taken per day?
-
+```{r}
 clean.values <- subset(activity[complete.cases(activity), ],)
 
 activity.patt  <- with(data = clean.values, tapply(X = steps, INDEX = date, FUN = sum))
@@ -25,9 +27,9 @@ hist(activity.patt$tot.steps, xlab = "Total Steps",
 mean(activity.patt$tot.steps)
 median(activity.patt$tot.steps)          
 
-
+```
 ## What is the average daily activity pattern?
-
+```{r}
 avg.steps <- with(data = clean.values, tapply(X = steps, INDEX = interval, FUN = mean))
 avg.steps  <- data.frame(interval = names(avg.steps), avgsteps = avg.steps)
 
@@ -43,23 +45,27 @@ with(avg.steps, plot(y = avgsteps,  x = interval, type = "l"))
 
 
 print(paste("5-minute interval that, on average across all the days in the dataset, contains the maximum number of steps :", print(names(which.max(avg.steps$avgsteps)))))
-
+```
 ## Imputing missing values
 #1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs) 
+```{r}
 print(paste("Total number of null values :" , sum(is.na(activity$steps))))
+```
 #2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
 
 # We'll use mean values already calculated in previous steps
 
 #3. Create a new dataset that is equal to the original dataset but with the missing data filled in
 #We are creating a new variable "filled.activity" that will have average steps filled in place of NA
+```{r}
 filled.activity <- activity
 nulls <- filled.activity[!complete.cases(filled.activity),]
 for(i in 1:length(unique(nulls$date))){
   filled.activity[which(filled.activity$date == unique(nulls$date)[i]),]$steps <- as.numeric(avg.steps$avgsteps)
 }
+```
 #4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps
-
+```{r}
 filled.activity.patt <- filled.activity %>% group_by(date) %>% summarize(tot.steps = sum(steps))
 
 hist(filled.activity.patt$tot.steps, xlab = "Total Steps", 
@@ -77,11 +83,11 @@ print("There is no impact on either mean or median values between original set a
 print("Comparison of original and filled in daily activity values")
 data.frame(Labels = c("Original","Amputated"), Means = c(mean(activity.patt$tot.steps), mean(filled.activity.patt$tot.steps)),
                     Medians = c(median(activity.patt$tot.steps), median(filled.activity.patt$tot.steps)))
-
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
 #1. Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
-
+```{r}
 filled.activity$day <- weekdays(filled.activity.patt$date)
 filled.activity$day.ind <- "weekday"
 filled.activity[filled.activity$day %in% c("Sunday","Saturday"),]$day.ind <- "weekend"
@@ -91,6 +97,7 @@ g <- ggplot(data = filled.activity.patt, ylab = "Average Steps") + geom_line(aes
 g <- g + facet_wrap(~day.ind) + ggtitle(label = "Activity Comparison") + ylab("Average number of steps")
 g
 
+```
 
 
 
