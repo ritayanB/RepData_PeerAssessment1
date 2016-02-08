@@ -7,56 +7,63 @@ keep_md: true
 ---
 
 
-## Loading and preprocessing the data
+### Loading and preprocessing the data
+####Unzipping the data assuming that the data is stored in the working directory
+
 ```{r}
 unzip("activity.zip")
-library(lubridate)
-library(dplyr)
-activity <- read.csv("activity.csv")
-activity$date <- ymd(activity$date)
 ```
 
-## What is mean total number of steps taken per day?
-```{r}
-clean.values <- subset(activity[complete.cases(activity), ],)
+####Loading required packages
 
+```{r}
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+```
+
+####Reading and preprocessing the data
+```{r}
+activity <- read.csv("activity.csv")
+activity$date <- ymd(activity$date)
+clean.values <- activity[complete.cases(activity), ]
+```
+
+### What is mean total number of steps taken per day?
+
+```{r}
 activity.patt  <- with(data = clean.values, tapply(X = steps, INDEX = date, FUN = sum))
 activity.patt  <- data.frame(date = names(activity.patt), tot.steps = activity.patt)
 hist(activity.patt$tot.steps, xlab = "Total Steps", 
             main = "Histogram of total number \n of steps taken each day")
-mean(activity.patt$tot.steps)
-median(activity.patt$tot.steps)          
-
 ```
-## What is the average daily activity pattern?
+```{r}
+data.frame(Attrib = c("Mean", "Median"), Value = c(mean(activity.patt$tot.steps), median(activity.patt$tot.steps)))
+```
+
+### What is the average daily activity pattern?
+
 ```{r}
 avg.steps <- with(data = clean.values, tapply(X = steps, INDEX = interval, FUN = mean))
 avg.steps  <- data.frame(interval = names(avg.steps), avgsteps = avg.steps)
 
 avg.steps <- clean.values %>% group_by(interval) %>% summarize(avgsteps = mean(steps))
 
-library(ggplot2)
-g <- ggplot(data = avg.steps, mapping = aes(y = avgsteps,  x = interval, group = 1)) 
-g <- g + geom_point(inherit.aes = TRUE) 
-g <- g  + geom_line(mapping = aes(y = avgsteps,  x = interval))
-g
-
 with(avg.steps, plot(y = avgsteps,  x = interval, type = "l"))
-
-
-print(paste("5-minute interval that, on average across all the days in the dataset, contains the maximum number of steps :", print(names(which.max(avg.steps$avgsteps)))))
 ```
-## Imputing missing values
-#1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs) 
+
+### Imputing missing values
+
+####Calculation of total number of missing values
+
 ```{r}
 print(paste("Total number of null values :" , sum(is.na(activity$steps))))
 ```
-#2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
 
-# We'll use mean values already calculated in previous steps
+#### We'll use mean values already calculated in previous steps. The values are already calculated in above steps. Assignment of value will be done in following lines.
 
-#3. Create a new dataset that is equal to the original dataset but with the missing data filled in
-#We are creating a new variable "filled.activity" that will have average steps filled in place of NA
+####We are creating a new variable "filled.activity" that will have average steps filled in place of NA
+
 ```{r}
 filled.activity <- activity
 nulls <- filled.activity[!complete.cases(filled.activity),]
@@ -64,41 +71,47 @@ for(i in 1:length(unique(nulls$date))){
   filled.activity[which(filled.activity$date == unique(nulls$date)[i]),]$steps <- as.numeric(avg.steps$avgsteps)
 }
 ```
-#4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps
+
+####Histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day
+
 ```{r}
 filled.activity.patt <- filled.activity %>% group_by(date) %>% summarize(tot.steps = sum(steps))
-
 hist(filled.activity.patt$tot.steps, xlab = "Total Steps", 
             main = "Histogram of total number \n of steps taken each day(null values amputed)")
-            
-print("Comparison of original and filled in mean and median steps values")
+```
+
+####Comparison of original and filled in mean and median steps values
+
+```{r}
 data.frame(Labels = c("Original","Amputated"), Means = c(mean(clean.values$steps), mean(filled.activity$steps)),
                     Medians =  c(median(clean.values$steps), median(filled.activity$steps)))
 
+```
 
+####We do not see much differences in the values before and after the missing value amputation
 
-print("There is no impact on either mean or median values between original set and the amputed set")
+####Comparison of original and filled in daily activity values
 
-
-print("Comparison of original and filled in daily activity values")
+```{r}
 data.frame(Labels = c("Original","Amputated"), Means = c(mean(activity.patt$tot.steps), mean(filled.activity.patt$tot.steps)),
                     Medians = c(median(activity.patt$tot.steps), median(filled.activity.patt$tot.steps)))
 ```
 
-## Are there differences in activity patterns between weekdays and weekends?
-#1. Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+### Are there differences in activity patterns between weekdays and weekends?
+
+#### Creation of new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
+
 ```{r}
 filled.activity$day <- weekdays(filled.activity.patt$date)
 filled.activity$day.ind <- "weekday"
 filled.activity[filled.activity$day %in% c("Sunday","Saturday"),]$day.ind <- "weekend"
+```
 
+####Comparison of average steps in wekdays and weekdays
+
+```{r}
 filled.activity.patt <- filled.activity %>% group_by(interval, day.ind) %>% summarize(steps = mean(steps))
 g <- ggplot(data = filled.activity.patt, ylab = "Average Steps") + geom_line(aes(x = interval, y = steps)) 
 g <- g + facet_wrap(~day.ind) + ggtitle(label = "Activity Comparison") + ylab("Average number of steps")
 g
-
 ```
-
-
-
-
