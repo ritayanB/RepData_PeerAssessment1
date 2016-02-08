@@ -9,6 +9,7 @@ output:
 ## Loading and preprocessing the data
 unzip("activity.zip")
 library(lubridate)
+library(dplyr)
 activity <- read.csv("activity.csv")
 activity$date <- ymd(activity$date)
 
@@ -30,7 +31,7 @@ median(activity.patt$tot.steps)
 avg.steps <- with(data = clean.values, tapply(X = steps, INDEX = interval, FUN = mean))
 avg.steps  <- data.frame(interval = names(avg.steps), avgsteps = avg.steps)
 
-
+avg.steps <- clean.values %>% group_by(interval) %>% summarize(avgsteps = mean(steps))
 
 library(ggplot2)
 g <- ggplot(data = avg.steps, mapping = aes(y = avgsteps,  x = interval, group = 1)) 
@@ -59,8 +60,8 @@ for(i in 1:length(unique(nulls$date))){
 }
 #4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps
 
-filled.activity.patt  <- with(data = filled.activity, tapply(X = steps, INDEX = date, FUN = sum))
-filled.activity.patt  <- data.frame(date = names(filled.activity.patt), tot.steps = filled.activity.patt)
+filled.activity.patt <- filled.activity %>% group_by(date) %>% summarize(tot.steps = sum(steps))
+
 hist(filled.activity.patt$tot.steps, xlab = "Total Steps", 
             main = "Histogram of total number \n of steps taken each day(null values amputed)")
             
@@ -84,7 +85,7 @@ data.frame(Labels = c("Original","Amputated"), Means = c(mean(activity.patt$tot.
 filled.activity$day <- weekdays(filled.activity.patt$date)
 filled.activity$day.ind <- "weekday"
 filled.activity[filled.activity$day %in% c("Sunday","Saturday"),]$day.ind <- "weekend"
-library(dplyr)
+
 filled.activity.patt <- filled.activity %>% group_by(interval, day.ind) %>% summarize(steps = mean(steps))
 g <- ggplot(data = filled.activity.patt, ylab = "Average Steps") + geom_line(aes(x = interval, y = steps)) 
 g <- g + facet_wrap(~day.ind) + ggtitle(label = "Activity Comparison") + ylab("Average number of steps")
