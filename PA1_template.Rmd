@@ -64,26 +64,31 @@ filled.activity.patt  <- data.frame(date = names(filled.activity.patt), tot.step
 hist(filled.activity.patt$tot.steps, xlab = "Total Steps", 
             main = "Histogram of total number \n of steps taken each day(null values amputed)")
             
-print(paste("Mean (with only clean values):", mean(clean.values$steps)))         
-print(paste("Mean (with filled values):", mean(filled.activity$steps)))
+print("Comparison of original and filled in mean and median steps values")
+data.frame(Labels = c("Original","Amputated"), Means = c(mean(clean.values$steps), mean(filled.activity$steps)),
+                    Medians =  c(median(clean.values$steps), median(filled.activity$steps)))
 
-print(paste("Median (with only clean values):", median(clean.values$steps)))         
-print(paste("Median (with filled values):", median(filled.activity$steps)))
+
 
 print("There is no impact on either mean or median values between original set and the amputed set")
 
 
-print("Comparison in ")
+print("Comparison of original and filled in daily activity values")
 data.frame(Labels = c("Original","Amputated"), Means = c(mean(activity.patt$tot.steps), mean(filled.activity.patt$tot.steps)),
                     Medians = c(median(activity.patt$tot.steps), median(filled.activity.patt$tot.steps)))
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+#1. Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
 
-
-
-
-
+filled.activity$day <- weekdays(filled.activity.patt$date)
+filled.activity$day.ind <- "weekday"
+filled.activity[filled.activity$day %in% c("Sunday","Saturday"),]$day.ind <- "weekend"
+library(dplyr)
+filled.activity.patt <- filled.activity %>% group_by(interval, day.ind) %>% summarize(steps = mean(steps))
+g <- ggplot(data = filled.activity.patt, ylab = "Average Steps") + geom_line(aes(x = interval, y = steps)) 
+g <- g + facet_wrap(~day.ind) + ggtitle(label = "Activity Comparison") + ylab("Average number of steps")
+g
 
 
 
